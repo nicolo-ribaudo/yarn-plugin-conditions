@@ -11,7 +11,7 @@ The conditions are toggled based on a corresponding environment flag.
 You can add this plugin to your Yarn 2 ("Yarn Berry") project running the following command:
 
 ```bash
-yarn plugin import from sources --repository nicolo-ribaudo/yarn-plugin-conditions --branch main --path bundles/@yarnpkg/plugin-conditions.js
+yarn plugin import https://raw.githubusercontent.com/nicolo-ribaudo/yarn-plugin-conditions/main/bundles/%40yarnpkg/plugin-conditions.js
 ```
 
 ## Configuration

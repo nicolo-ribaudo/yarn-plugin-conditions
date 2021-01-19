@@ -1,8 +1,15 @@
-import { Resolver, ResolveOptions, LinkType, IdentHash } from "@yarnpkg/core";
+import {
+  Resolver,
+  ResolveOptions,
+  LinkType,
+  IdentHash,
+  structUtils,
+} from "@yarnpkg/core";
 import { Descriptor, Locator, Package } from "@yarnpkg/core";
 
-import * as conditionUtils from "./conditionUtils";
-import { getDefaultTestValue } from "./configuration";
+import * as conditionUtils from "./utils";
+import * as conditionProxyUtils from "../ConditionProxyProtocol/utils";
+import { getDefaultTestValue } from "../configuration";
 
 export class ConditionResolver implements Resolver {
   supportsDescriptor(descriptor: Descriptor) {
@@ -26,15 +33,17 @@ export class ConditionResolver implements Resolver {
       descriptor
     );
     return [
-      conditionUtils.makeVirtualDescriptor(
+      conditionProxyUtils.makeVirtualDescriptor(
         test,
         true,
+        descriptor.scope,
         descriptor.name,
         consequent
       ),
-      conditionUtils.makeVirtualDescriptor(
+      conditionProxyUtils.makeVirtualDescriptor(
         test,
         false,
+        descriptor.scope,
         descriptor.name,
         alternate
       ),
@@ -46,6 +55,15 @@ export class ConditionResolver implements Resolver {
     dependencies: unknown,
     opts: ResolveOptions
   ): Promise<Locator[]> {
+    if (conditionProxyUtils.isConditionProxy(descriptor.range)) {
+      return [
+        conditionProxyUtils.makeLocator(
+          descriptor,
+          conditionProxyUtils.parseDescriptor(descriptor)
+        ),
+      ];
+    }
+
     const { test, consequent, alternate } = conditionUtils.parseDescriptor(
       descriptor
     );
@@ -82,15 +100,17 @@ export class ConditionResolver implements Resolver {
       getDefaultTestValue(opts.project, test)
     );
 
-    const descTrue = conditionUtils.makeVirtualDescriptor(
+    const descTrue = conditionProxyUtils.makeVirtualDescriptor(
       test,
       true,
+      locator.scope,
       locator.name,
       consequent
     );
-    const descFalse = conditionUtils.makeVirtualDescriptor(
+    const descFalse = conditionProxyUtils.makeVirtualDescriptor(
       test,
       false,
+      locator.scope,
       locator.name,
       alternate
     );

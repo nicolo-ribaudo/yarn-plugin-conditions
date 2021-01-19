@@ -1,6 +1,6 @@
 import { structUtils, Workspace } from "@yarnpkg/core";
 
-import * as conditionUtils from "./conditionUtils";
+import * as conditionUtils from "./ConditionProtocol/utils";
 import { evaluateTest } from "./configuration";
 
 const DEPENDENCY_TYPES = [
@@ -16,8 +16,8 @@ export function beforeWorkspacePacking(
   const { project } = workspace;
 
   for (const dependencyType of DEPENDENCY_TYPES) {
-    const descs = workspace.manifest.getForScope(dependencyType).values();
-    for (const descriptor of descs) {
+    const descs = workspace.manifest.getForScope(dependencyType);
+    for (const [hash, descriptor] of descs) {
       if (!conditionUtils.hasConditionProtocol(descriptor.range)) {
         continue;
       }
@@ -31,8 +31,10 @@ export function beforeWorkspacePacking(
 
       if (version) {
         rawManifest[dependencyType][ident] = version;
+        descriptor.range = version;
       } else {
         delete rawManifest[dependencyType][ident];
+        descs.delete(hash);
       }
     }
   }

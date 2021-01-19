@@ -2,7 +2,7 @@ import { Resolver, ResolveOptions, LinkType, IdentHash } from "@yarnpkg/core";
 import { Descriptor, Locator, Package } from "@yarnpkg/core";
 
 import * as conditionUtils from "./conditionUtils";
-import { assertKnownCondition, getDefaultTestValue } from "./configuration";
+import { getDefaultTestValue } from "./configuration";
 
 export class ConditionResolver implements Resolver {
   supportsDescriptor(descriptor: Descriptor) {

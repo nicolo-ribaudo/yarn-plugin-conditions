@@ -37,7 +37,7 @@ export const configuration: Partial<ConfigurationDefinitionMap> = {
   },
 };
 
-export function assertKnownCondition(project: Project, test: string) {
+function assertKnownCondition(project: Project, test: string) {
   const config = project.configuration;
 
   if (!config.get("conditions").has(test)) {

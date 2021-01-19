@@ -7,6 +7,9 @@ import { getLibzipPromise } from "@yarnpkg/libzip";
 import * as conditionUtils from "./conditionUtils";
 import { getDefaultTestValue } from "./configuration";
 
+// We always set the same mtime in generated zip archives, to keep the checksum static.
+const mtime = 1580511600000;
+
 export class ConditionFetcher implements Fetcher {
   supports(locator: Locator) {
     return conditionUtils.hasConditionProtocol(locator.reference);
@@ -35,9 +38,7 @@ export class ConditionFetcher implements Fetcher {
         ),
       loader: () => this.generateConditionPackage(locator, opts),
 
-      // The mtime of this zip archive changes every time we create it.
-      // We can disable the integrity checks, the archive is generated locally anyway.
-      skipIntegrityCheck: true,
+      skipIntegrityCheck: opts.skipIntegrityCheck,
     });
 
     return {
@@ -63,11 +64,13 @@ export class ConditionFetcher implements Fetcher {
       defaultValue
     );
 
-    const tmpDir = await xfs.mktempPromise();
+    const [tmpDir, libzip] = await Promise.all([
+      xfs.mktempPromise(),
+      getLibzipPromise(),
+    ]);
+
     const tmpFile = ppath.join(tmpDir, "condition.zip" as Filename);
     const prefixPath = structUtils.getIdentVendorPath(locator);
-
-    const libzip = await getLibzipPromise();
 
     const conditionPackage = new ZipFS(tmpFile, {
       libzip,
@@ -100,6 +103,12 @@ module.exports = bool(process.env[${JSON.stringify(test)}])
   ? require(${JSON.stringify(`${name}-${test}-true`)})
   : require(${JSON.stringify(`${name}-${test}-false`)});
 `
+    );
+
+    await Promise.all(
+      conditionPackage
+        .getAllFiles()
+        .map((path) => conditionPackage.utimesPromise(path, mtime, mtime))
     );
 
     return conditionPackage;

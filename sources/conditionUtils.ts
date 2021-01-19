@@ -7,7 +7,7 @@ import {
 } from "@yarnpkg/core";
 
 // We must update this every time that the generated proxy dependency changes.
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 
 export function hasConditionProtocol(range: string) {
   return range.startsWith("condition:");

@@ -34,7 +34,10 @@ export class ConditionFetcher implements Fetcher {
           )} can't be found in the cache and will be fetched from the disk`
         ),
       loader: () => this.generateConditionPackage(locator, opts),
-      skipIntegrityCheck: opts.skipIntegrityCheck,
+
+      // The mtime of this zip archive changes every time we create it.
+      // We can disable the integrity checks, the archive is generated locally anyway.
+      skipIntegrityCheck: true,
     });
 
     return {

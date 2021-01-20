@@ -1,13 +1,8 @@
 import { structUtils, Workspace } from "@yarnpkg/core";
 
-import * as conditionUtils from "./ConditionProtocol/utils";
-import { evaluateTest } from "./configuration";
-
-const DEPENDENCY_TYPES = [
-  "dependencies",
-  "devDependencies",
-  "peerDependencies",
-];
+import * as conditionUtils from "./conditionUtils";
+import { evaluateCondition } from "./configuration";
+import { DEPENDENCY_TYPES } from "./constants";
 
 export function beforeWorkspacePacking(
   workspace: Workspace,
@@ -26,7 +21,7 @@ export function beforeWorkspacePacking(
         descriptor
       );
 
-      const version = evaluateTest(project, test) ? consequent : alternate;
+      const version = evaluateCondition(project, test) ? consequent : alternate;
       const ident = structUtils.stringifyIdent(descriptor);
 
       if (version) {

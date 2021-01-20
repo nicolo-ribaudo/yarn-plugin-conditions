@@ -2,7 +2,7 @@ import { Fetcher, FetchOptions } from "@yarnpkg/core";
 import { Locator } from "@yarnpkg/core";
 import { structUtils } from "@yarnpkg/core";
 
-import * as conditionUtils from "./utils";
+import * as conditionUtils from "../conditionUtils";
 import { getDefaultTestValue } from "../configuration";
 import { createSimplePackage } from "../zipUtils";
 

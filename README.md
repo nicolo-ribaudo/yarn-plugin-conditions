@@ -45,6 +45,8 @@ When running `yarn install`, Yarn will install both the `<if-true>` and `<if-fal
 
 When running `yarn pack` or `yarn publish`, Yarn will remove the `condition:` protocol from `package.json` files, replacing it with the dependency version selected by the `<test>` env variable. This makes sure that packages published on the npm registry are compatible with the rest of the ecosystem.
 
+If you want to remove the conditions from your `package.json` files, you can run the `yarn condition materialize <test> [--true|--false]` command.
+
 ## Example
 
 You could set your dependencies like this:
@@ -104,6 +106,23 @@ This can be resolved to four different sets of dependencies:
     }
   }
   ```
+
+If you want to remove the `experimental` condition (evaluating it to `true`) you can run
+
+```
+yarn condition materialize experimental --true
+```
+
+The `package.json` file will be automatically updated to
+
+```json
+{
+  "dependencies": {
+    "chokidar": "condition: node10 ? ^3.5.1 : ^2.1.8",
+    "parcel": "next"
+  }
+}
+```
 
 ## Contributing
 

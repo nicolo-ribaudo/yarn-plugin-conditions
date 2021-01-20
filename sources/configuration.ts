@@ -37,12 +37,12 @@ export const configuration: Partial<ConfigurationDefinitionMap> = {
   },
 };
 
-function assertKnownCondition(project: Project, test: string) {
+export function assertKnownCondition(project: Project, condition: string) {
   const config = project.configuration;
 
-  if (!config.get("conditions").has(test)) {
+  if (!config.get("conditions").has(condition)) {
     throw new Error(
-      `Unknown condition: ${test}. You must add it to your .yarnrc.yml file.`
+      `Unknown condition: ${condition}. You must add it to your .yarnrc.yml file.`
     );
   }
 }
@@ -52,18 +52,18 @@ export function getDefaultTestValue(project: Project, test: string) {
   return project.configuration.get("conditions").get(test).get("default");
 }
 
-export function evaluateTest(project: Project, test: string) {
-  assertKnownCondition(project, test);
-  const condition = project.configuration.get("conditions").get(test);
+export function evaluateCondition(project: Project, condition: string) {
+  assertKnownCondition(project, condition);
+  const opt = project.configuration.get("conditions").get(condition);
 
-  const source = condition.get("source");
-  const defaultValue = condition.get("default");
+  const source = opt.get("source");
+  const defaultValue = opt.get("default");
 
   if (source !== "env") {
     throw new Error("The only supported configuration source is 'env'");
   }
 
-  return bool(process.env[test]) ?? defaultValue;
+  return bool(process.env[condition]) ?? defaultValue;
 }
 
 // env vars from the cli are always strings, so !!ENV_VAR returns true for "false"

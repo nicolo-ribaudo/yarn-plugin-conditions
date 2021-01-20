@@ -3,12 +3,11 @@ import {
   ResolveOptions,
   LinkType,
   IdentHash,
-  structUtils,
   MinimalResolveOptions,
 } from "@yarnpkg/core";
 import { Descriptor, Locator, Package } from "@yarnpkg/core";
 
-import * as conditionUtils from "./utils";
+import * as conditionUtils from "../conditionUtils";
 import { getDefaultTestValue } from "../configuration";
 
 export class ConditionResolver implements Resolver {

@@ -1,14 +1,10 @@
 import { Fetcher, FetchOptions } from "@yarnpkg/core";
 import { Locator } from "@yarnpkg/core";
 import { structUtils } from "@yarnpkg/core";
-import { Filename, ppath, xfs, ZipFS } from "@yarnpkg/fslib";
-import { getLibzipPromise } from "@yarnpkg/libzip";
 
-import * as conditionUtils from "./conditionUtils";
-import { getDefaultTestValue } from "./configuration";
-
-// We always set the same mtime in generated zip archives, to keep the checksum static.
-const mtime = 1580511600000;
+import * as conditionUtils from "./utils";
+import { getDefaultTestValue } from "../configuration";
+import { createSimplePackage } from "../zipUtils";
 
 export class ConditionFetcher implements Fetcher {
   supports(locator: Locator) {
@@ -56,7 +52,6 @@ export class ConditionFetcher implements Fetcher {
     );
     const defaultValue = getDefaultTestValue(opts.project, test);
 
-    const { name } = locator;
     const hash = conditionUtils.makeHash(
       test,
       consequent,
@@ -64,53 +59,48 @@ export class ConditionFetcher implements Fetcher {
       defaultValue
     );
 
-    const [tmpDir, libzip] = await Promise.all([
-      xfs.mktempPromise(),
-      getLibzipPromise(),
-    ]);
+    const consequentDesc =
+      consequent &&
+      conditionUtils.makeQualifiedDescriptor(
+        opts.project,
+        locator,
+        test,
+        consequent,
+        true
+      );
+    const alternateDesc =
+      alternate &&
+      conditionUtils.makeQualifiedDescriptor(
+        opts.project,
+        locator,
+        test,
+        alternate,
+        false
+      );
 
-    const tmpFile = ppath.join(tmpDir, "condition.zip" as Filename);
-    const prefixPath = structUtils.getIdentVendorPath(locator);
+    const consequentName = structUtils.stringifyIdent(consequentDesc);
+    const alternateName = structUtils.stringifyIdent(alternateDesc);
 
-    const conditionPackage = new ZipFS(tmpFile, {
-      libzip,
-      create: true,
-      level: opts.project.configuration.get(`compressionLevel`),
-    });
-
-    await conditionPackage.mkdirpPromise(prefixPath);
-
-    await conditionPackage.writeJsonPromise(
-      ppath.join(prefixPath, "package.json" as Filename),
+    return createSimplePackage(
+      locator,
+      opts.project,
       {
         version: `0.0.0-condition-${hash}`,
         dependencies: {
-          [`${name}-${test}-true`]: consequent,
-          [`${name}-${test}-false`]: alternate,
+          [consequentName]: consequentDesc.range,
+          [alternateName]: alternateDesc.range,
         },
-      }
-    );
-    await conditionPackage.writeFilePromise(
-      ppath.join(prefixPath, "index.js" as Filename),
+      },
       `\
 // env vars from the cli are always strings, so !!ENV_VAR returns true for "false"
 function bool(value) {
   if (value == null) return ${defaultValue};
   return value && value !== "false" && value !== "0";
 }
-
 module.exports = bool(process.env[${JSON.stringify(test)}])
-  ? require(${JSON.stringify(`${name}-${test}-true`)})
-  : require(${JSON.stringify(`${name}-${test}-false`)});
+  ? require(${JSON.stringify(consequentName)})
+  : require(${JSON.stringify(alternateName)});
 `
     );
-
-    await Promise.all(
-      conditionPackage
-        .getAllFiles()
-        .map((path) => conditionPackage.utimesPromise(path, mtime, mtime))
-    );
-
-    return conditionPackage;
   }
 }

@@ -1,8 +1,15 @@
-import { Resolver, ResolveOptions, LinkType, IdentHash } from "@yarnpkg/core";
+import {
+  Resolver,
+  ResolveOptions,
+  LinkType,
+  IdentHash,
+  structUtils,
+  MinimalResolveOptions,
+} from "@yarnpkg/core";
 import { Descriptor, Locator, Package } from "@yarnpkg/core";
 
-import * as conditionUtils from "./conditionUtils";
-import { getDefaultTestValue } from "./configuration";
+import * as conditionUtils from "./utils";
+import { getDefaultTestValue } from "../configuration";
 
 export class ConditionResolver implements Resolver {
   supportsDescriptor(descriptor: Descriptor) {
@@ -21,23 +28,31 @@ export class ConditionResolver implements Resolver {
     return descriptor;
   }
 
-  getResolutionDependencies(descriptor: Descriptor): Descriptor[] {
+  getResolutionDependencies(
+    descriptor: Descriptor,
+    opts: MinimalResolveOptions
+  ): Descriptor[] {
     const { test, consequent, alternate } = conditionUtils.parseDescriptor(
       descriptor
     );
+
     return [
-      conditionUtils.makeVirtualDescriptor(
-        test,
-        true,
-        descriptor.name,
-        consequent
-      ),
-      conditionUtils.makeVirtualDescriptor(
-        test,
-        false,
-        descriptor.name,
-        alternate
-      ),
+      consequent &&
+        conditionUtils.makeQualifiedDescriptor(
+          opts.project,
+          descriptor,
+          test,
+          consequent,
+          true
+        ),
+      alternate &&
+        conditionUtils.makeQualifiedDescriptor(
+          opts.project,
+          descriptor,
+          test,
+          alternate,
+          false
+        ),
     ].filter(Boolean);
   }
 
@@ -82,18 +97,24 @@ export class ConditionResolver implements Resolver {
       getDefaultTestValue(opts.project, test)
     );
 
-    const descTrue = conditionUtils.makeVirtualDescriptor(
-      test,
-      true,
-      locator.name,
-      consequent
-    );
-    const descFalse = conditionUtils.makeVirtualDescriptor(
-      test,
-      false,
-      locator.name,
-      alternate
-    );
+    const consequentDesc =
+      consequent &&
+      conditionUtils.makeQualifiedDescriptor(
+        opts.project,
+        locator,
+        test,
+        consequent,
+        true
+      );
+    const alternateDesc =
+      alternate &&
+      conditionUtils.makeQualifiedDescriptor(
+        opts.project,
+        locator,
+        test,
+        alternate,
+        false
+      );
 
     return {
       ...locator,
@@ -102,8 +123,8 @@ export class ConditionResolver implements Resolver {
       linkType: LinkType.HARD,
       dependencies: new Map(
         [
-          descTrue && [descTrue.identHash, descTrue],
-          descFalse && [descFalse.identHash, descFalse],
+          consequent && [consequentDesc.identHash, consequentDesc],
+          alternate && [alternateDesc.identHash, alternateDesc],
         ].filter(Boolean) as [IdentHash, Descriptor][]
       ),
       peerDependencies: new Map(),

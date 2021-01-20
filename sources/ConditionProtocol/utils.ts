@@ -4,10 +4,11 @@ import {
   Descriptor,
   Ident,
   hashUtils,
+  Project,
 } from "@yarnpkg/core";
 
 // We must update this every time that the generated proxy dependency changes.
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 
 export function hasConditionProtocol(range: string) {
   return range.startsWith("condition:");
@@ -36,17 +37,6 @@ export function parseDescriptor(descriptor: Descriptor) {
 
 export function parseLocator(locator: Locator) {
   return parseSpec(locator.reference);
-}
-
-export function makeVirtualDescriptor(
-  condition: string,
-  test: boolean,
-  name: string,
-  version: string | null
-): Descriptor | null {
-  if (!version) return null;
-  const ident = structUtils.makeIdent("", `${name}-${condition}-${test}`);
-  return structUtils.makeDescriptor(ident, `npm:${name}@${version}`);
 }
 
 function makeSpec({
@@ -86,13 +76,26 @@ export function makeLocator(
 ) {
   return structUtils.makeLocator(
     ident,
-    makeSpec({
-      test,
-      consequent,
-      alternate,
-      hash,
-    })
+    makeSpec({ test, consequent, alternate, hash })
   );
+}
+
+export function makeQualifiedDescriptor(
+  project: Project,
+  base: Ident,
+  test: string,
+  range: string,
+  result: boolean
+) {
+  const ident = structUtils.makeIdent(
+    base.scope,
+    `${base.name}-${test}-${result}`
+  );
+  const qualifiedRange =
+    project.configuration.get("defaultProtocol") +
+    `${structUtils.stringifyIdent(base)}@${range}`;
+
+  return structUtils.makeDescriptor(ident, qualifiedRange);
 }
 
 export function makeHash(

@@ -1,6 +1,6 @@
 import { structUtils, Workspace } from "@yarnpkg/core";
 
-import * as conditionUtils from "./conditionUtils";
+import * as conditionUtils from "./ConditionProtocol/utils";
 import { evaluateTest } from "./configuration";
 
 const DEPENDENCY_TYPES = [

@@ -24,10 +24,19 @@ export function beforeWorkspacePacking(
       const version = evaluateCondition(project, test) ? consequent : alternate;
       const ident = structUtils.stringifyIdent(descriptor);
 
+      // optionalDependencies are considered normal dependencies by the
+      // yarn API, but they are in a different filed in package.json
+      const thisDepType =
+        dependencyType === "dependencies" &&
+        !rawManifest["dependencies"][ident] &&
+        rawManifest["optionalDependencies"]?.[ident]
+          ? "optionalDependencies"
+          : dependencyType;
+
       if (version) {
-        rawManifest[dependencyType][ident] = version;
+        rawManifest[thisDepType][ident] = version;
       } else {
-        delete rawManifest[dependencyType][ident];
+        delete rawManifest[thisDepType][ident];
       }
     }
   }

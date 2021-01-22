@@ -47,39 +47,46 @@ export class ConditionFetcher implements Fetcher {
   }
 
   private async generateConditionPackage(locator: Locator, opts: FetchOptions) {
-    const { test, consequent, alternate } = conditionUtils.parseLocator(
-      locator
-    );
+    const {
+      test,
+      consequent: consequentOpt,
+      alternate: alternateOpt,
+    } = conditionUtils.parseLocator(locator);
     const defaultValue = getDefaultTestValue(opts.project, test);
 
     const hash = conditionUtils.makeHash(
       test,
-      consequent,
-      alternate,
+      consequentOpt,
+      alternateOpt,
       defaultValue
     );
 
-    const consequentDesc =
-      consequent &&
-      conditionUtils.makeQualifiedDescriptor(
+    const prepare = (option, result) => {
+      if (option == null) {
+        return {
+          dependency: null,
+          specifier: JSON.stringify("ASSERT: Missing dependency"),
+        };
+      }
+
+      const desc = conditionUtils.makeQualifiedDescriptor(
         opts.project,
         locator,
         test,
-        consequent,
-        true
-      );
-    const alternateDesc =
-      alternate &&
-      conditionUtils.makeQualifiedDescriptor(
-        opts.project,
-        locator,
-        test,
-        alternate,
-        false
+        option,
+        result
       );
 
-    const consequentName = structUtils.stringifyIdent(consequentDesc);
-    const alternateName = structUtils.stringifyIdent(alternateDesc);
+      const name = structUtils.stringifyIdent(desc);
+
+      return {
+        dependency: { [name]: desc.range },
+        specifier: JSON.stringify(name),
+      };
+    };
+
+    const consequent = prepare(consequentOpt, true);
+    const alternate = prepare(alternateOpt, false);
 
     return createSimplePackage(
       locator,
@@ -87,8 +94,8 @@ export class ConditionFetcher implements Fetcher {
       {
         version: `0.0.0-condition-${hash}`,
         dependencies: {
-          [consequentName]: consequentDesc.range,
-          [alternateName]: alternateDesc.range,
+          ...consequent.dependency,
+          ...alternate.dependency,
         },
       },
       `\
@@ -98,8 +105,8 @@ function bool(value) {
   return value && value !== "false" && value !== "0";
 }
 module.exports = bool(process.env[${JSON.stringify(test)}])
-  ? require(${JSON.stringify(consequentName)})
-  : require(${JSON.stringify(alternateName)});
+  ? require(${consequent.specifier})
+  : require(${alternate.specifier});
 `
     );
   }

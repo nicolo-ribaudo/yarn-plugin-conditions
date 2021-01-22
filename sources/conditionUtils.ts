@@ -14,7 +14,9 @@ export function hasConditionProtocol(range: string) {
   return range.startsWith("condition:");
 }
 
-function parseSpec<T>(spec: string) {
+function parseSpec<T>(
+  spec: string
+): { test: string; consequent: string | null; alternate: string | null } {
   const match = spec.match(
     /^condition:\s*(?<test>\w+)\s*\?\s*(?<consequent>[^\s:]*)\s*:\s*(?<alternate>[^\s:#]*)\s*(?:#(.*))?$/
   );

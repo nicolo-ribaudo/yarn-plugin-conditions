@@ -1,14 +1,16 @@
-import { structUtils, Workspace } from "@yarnpkg/core";
+import { Hooks, structUtils, Workspace } from "@yarnpkg/core";
 
 import * as conditionUtils from "./conditionUtils";
 import { evaluateCondition } from "./configuration";
 import { DEPENDENCY_TYPES } from "./constants";
 
-export function beforeWorkspacePacking(
+export async function beforeWorkspacePacking(
   workspace: Workspace,
   rawManifest: object
 ) {
   const { project } = workspace;
+
+  let updated = false;
 
   for (const dependencyType of DEPENDENCY_TYPES) {
     const descs = workspace.manifest.getForScope(dependencyType).values();
@@ -35,9 +37,26 @@ export function beforeWorkspacePacking(
 
       if (version) {
         rawManifest[thisDepType][ident] = version;
+        workspace.manifest.raw[thisDepType][ident] = version;
+        workspace.manifest[dependencyType].set(
+          descriptor.identHash,
+          structUtils.makeDescriptor(descriptor, version)
+        );
       } else {
         delete rawManifest[thisDepType][ident];
+        delete workspace.manifest.raw[thisDepType][ident];
+        workspace.manifest[dependencyType].delete(descriptor.identHash);
       }
+
+      updated = true;
     }
+  }
+
+  if (updated) {
+    await workspace.project.configuration.triggerHook(
+      (hooks: Hooks) => (hooks as any).beforeWorkspacePacking,
+      workspace,
+      rawManifest
+    );
   }
 }

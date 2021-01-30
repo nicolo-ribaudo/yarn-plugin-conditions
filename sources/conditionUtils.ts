@@ -7,30 +7,34 @@ import {
   Project,
 } from "@yarnpkg/core";
 
+import { parse } from "./conditionParser";
+
 // We must update this every time that the generated proxy dependency changes.
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 4;
 
 export function hasConditionProtocol(range: string) {
   return range.startsWith("condition:");
 }
 
-function parseSpec<T>(
+export function parseSpec(
   spec: string
 ): { test: string; consequent: string | null; alternate: string | null } {
-  const match = spec.match(
-    /^condition:\s*(?<test>\w+)\s*\?\s*(?<consequent>[^\s:]*)\s*:\s*(?<alternate>[^\s:#]*)\s*(?:#(.*))?$/
-  );
-
-  let params;
-  if (match !== null) {
-    params = match.groups;
-  } else {
-    params = structUtils.parseRange(spec).params;
+  try {
+    return parse(spec);
+  } catch (e) {
+    try {
+      const { test, consequent, alternate } = structUtils.parseRange(
+        spec
+      ).params;
+      return {
+        test,
+        consequent: consequent || null,
+        alternate: alternate || null,
+      };
+    } catch {
+      throw e;
+    }
   }
-
-  const { test, consequent, alternate } = params;
-
-  return { test, consequent: consequent || null, alternate: alternate || null };
 }
 
 export function parseDescriptor(descriptor: Descriptor) {

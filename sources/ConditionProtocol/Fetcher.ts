@@ -65,7 +65,7 @@ export class ConditionFetcher implements Fetcher {
       if (option == null) {
         return {
           dependency: null,
-          specifier: JSON.stringify("ASSERT: Missing dependency"),
+          require: `null`,
         };
       }
 
@@ -81,7 +81,7 @@ export class ConditionFetcher implements Fetcher {
 
       return {
         dependency: { [name]: desc.range },
-        specifier: JSON.stringify(name),
+        require: `require(${JSON.stringify(name)})`,
       };
     };
 
@@ -105,8 +105,8 @@ function bool(value) {
   return value && value !== "false" && value !== "0";
 }
 module.exports = bool(process.env[${JSON.stringify(test)}])
-  ? require(${consequent.specifier})
-  : require(${alternate.specifier});
+  ? ${consequent.require}
+  : ${alternate.require};
 `
     );
   }

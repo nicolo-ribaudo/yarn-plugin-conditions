@@ -9,8 +9,7 @@ import {
 
 import { parse } from "./conditionParser";
 
-// We must update this every time that the generated proxy dependency changes.
-const CACHE_VERSION = 4;
+import { CACHE_VERSION } from "./constants";
 
 export function hasConditionProtocol(range: string) {
   return range.startsWith("condition:");

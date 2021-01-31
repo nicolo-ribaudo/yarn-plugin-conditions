@@ -27,10 +27,10 @@ export function parse(
 
   let consequent = null;
   if (source[pos] === "(") {
-    consequent = eatParenthesized().trim();
+    consequent = eatParenthesized().trim() || null;
     skipWs();
   } else if (source[pos] !== ":") {
-    consequent = eatUntil(":").trimRight();
+    consequent = eatUntil(":").trimRight() || null;
   }
 
   expect(":");
@@ -39,10 +39,10 @@ export function parse(
   let alternate = null;
   if (pos < source.length) {
     if (source[pos] === "(") {
-      alternate = eatParenthesized().trim();
+      alternate = eatParenthesized().trim() || null;
       skipWs();
     } else if (source[pos] !== ":") {
-      alternate = eatUntil("#").trimRight();
+      alternate = eatUntil("#").trimRight() || null;
     }
   }
 

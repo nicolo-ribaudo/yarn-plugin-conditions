@@ -7,13 +7,18 @@ import {
   StreamReport,
 } from "@yarnpkg/core";
 import { BaseCommand } from "@yarnpkg/cli";
-import { Command, Usage } from "clipanion";
+import { Command, Option, Usage } from "clipanion";
+import * as t from "typanion";
 
 import { assertKnownCondition, evaluateCondition } from "../configuration";
 import { DEPENDENCY_TYPES } from "../constants";
 import * as conditionUtils from "../conditionUtils";
 
 export class MaterlializeCommand extends BaseCommand {
+  static paths = [
+    ["condition", "materialize"]
+  ];
+
   static usage: Usage = Command.Usage({
     description: "Evaluate and replace a condition in package.json files",
     details: `
@@ -28,21 +33,17 @@ export class MaterlializeCommand extends BaseCommand {
     `,
   });
 
-  @Command.String({ required: true })
-  condition!: string;
+  condition: string = Option.String({ required: true });
 
-  @Command.Boolean("--true")
-  true!: boolean;
+  true: boolean = Option.Boolean("--true", false);
 
-  @Command.Boolean("--false")
-  false!: boolean;
+  false: boolean = Option.Boolean("--false", false);
 
-  @Command.Path("condition", "materialize")
+	static schema = [
+		t.hasMutuallyExclusiveKeys(["true", "false"]),
+];
+
   async execute() {
-    if (this.false && this.true) {
-      throw new Error("You can either specify --true or --false");
-    }
-
     const { project, workspace, cache, configuration } = await this.getRoot();
 
     assertKnownCondition(project, this.condition);

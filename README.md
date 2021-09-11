@@ -1,6 +1,6 @@
 # `@yarnpkg/plugin-conditions`
 
-This Yarn plugin adds support for the `condition:` [protocol](https://yarnpkg.com/features/protocols). It can be used for conditionally selecting a dependency version depending on a specific flag.
+This Yarn 3 plugin adds support for the `condition:` [protocol](https://yarnpkg.com/features/protocols). It can be used for conditionally selecting a dependency version depending on a specific flag.
 
 The conditions are toggled based on a corresponding environment flag.
 
@@ -8,7 +8,7 @@ The conditions are toggled based on a corresponding environment flag.
 
 ## Installation
 
-You can add this plugin to your Yarn 2 ("Yarn Berry") project running the following command:
+You can add this plugin to your Yarn 3 ("Yarn Berry") project running the following command:
 
 ```bash
 yarn plugin import https://raw.githubusercontent.com/nicolo-ribaudo/yarn-plugin-conditions/main/bundles/%40yarnpkg/plugin-conditions.js

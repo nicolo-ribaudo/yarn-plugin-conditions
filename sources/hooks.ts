@@ -4,6 +4,8 @@ import * as conditionUtils from "./conditionUtils";
 import { evaluateCondition } from "./configuration";
 import { DEPENDENCY_TYPES } from "./constants";
 
+const has = Function.call.bind(Object.prototype.hasOwnProperty);
+
 export async function beforeWorkspacePacking(
   workspace: Workspace,
   rawManifest: object
@@ -50,6 +52,23 @@ export async function beforeWorkspacePacking(
 
       updated = true;
     }
+  }
+
+  if (has(rawManifest, "conditions")) {
+    updated = true;
+
+    const conditions = rawManifest["conditions"] as conditionUtils.PkgConditions;
+    for (const [test, [consequent, alternate]] of Object.entries(conditions)) {
+      const props = evaluateCondition(project, test) ? consequent : alternate;
+      if (props) {
+        for (const [key, value] of Object.entries(props)) {
+          if (value === null) delete rawManifest[key];
+          else rawManifest[key] = value;
+        }
+      }
+    }
+
+    delete rawManifest["conditions"];
   }
 
   if (updated) {

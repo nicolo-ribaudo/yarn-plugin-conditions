@@ -14,6 +14,10 @@ import { assertKnownCondition, evaluateCondition } from "../configuration";
 import { DEPENDENCY_TYPES } from "../constants";
 import * as conditionUtils from "../conditionUtils";
 
+const has = Function.call.bind(Object.prototype.hasOwnProperty);
+const hasDeep = (obj: object, prop: string, ...next: string[]) =>
+  has(obj, prop) && (next.length === 0 || hasDeep(obj[prop], ...next as [string, ...string[]]));
+
 export class MaterlializeCommand extends BaseCommand {
   static paths = [
     ["condition", "materialize"]
@@ -41,7 +45,7 @@ export class MaterlializeCommand extends BaseCommand {
 
 	static schema = [
 		t.hasMutuallyExclusiveKeys(["true", "false"]),
-];
+  ];
 
   async execute() {
     const { project, workspace, cache, configuration } = await this.getRoot();
@@ -107,6 +111,24 @@ export class MaterlializeCommand extends BaseCommand {
         } else {
           workspace.manifest[dependencyType].delete(descriptor.identHash);
         }
+      }
+    }
+
+    const rawManifest = workspace.manifest.raw;
+    if (hasDeep(rawManifest, "conditions", this.condition)) {
+      const [consequent, alternate] = rawManifest["conditions"][this.condition];
+      const props = value ? consequent : alternate;
+      if (props) {
+        for (const [key, value] of Object.entries(props)) {
+          if (value === null) delete rawManifest[key];
+          else rawManifest[key] = value;
+        }
+      }
+
+      if (Object.keys(rawManifest["conditions"]).length === 1) {
+        delete rawManifest["conditions"];
+      } else {
+        delete rawManifest["conditions"][this.condition];
       }
     }
   }

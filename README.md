@@ -1,8 +1,8 @@
 # `@yarnpkg/plugin-conditions`
 
-This Yarn 3 plugin adds support for the `condition:` [protocol](https://yarnpkg.com/features/protocols). It can be used for conditionally selecting a dependency version depending on a specific flag.
+This Yarn 3 plugin adds support for the `condition:` [protocol](https://yarnpkg.com/features/protocols). It can be used for conditionally selecting a dependency version depending on a specific flag. Additionally, it can be use to optionally include or exclude some `package.json` fields using the new `"conditions"` field.
 
-The conditions are toggled based on a corresponding environment flag.
+Conditions are toggled based on a corresponding environment flag.
 
 > ⚠️ Only CommonJS dependencies are supported at the moment.
 
@@ -16,7 +16,7 @@ yarn plugin import https://raw.githubusercontent.com/nicolo-ribaudo/yarn-plugin-
 
 ## Configuration
 
-Before using the `condition:` protocol, you must first list the allowed conditions in your `.yarnrc.yml` file. You can optionally specify a default value for the condition when it's not explicitly set.
+Before using conditions, you must first list the allowed ones in your `.yarnrc.yml` file. You can optionally specify a default value for the condition when it's not explicitly set.
 
 ```yaml
 # .yarnrc.yml
@@ -43,11 +43,25 @@ condition: <test> ? <if-true> : <if-false>
 
 When running `yarn install`, Yarn will install both the `<if-true>` and `<if-false>` dependencies. At _runtime_, it will decide which dependency to load based on the `<test>` condition.
 
-When running `yarn pack` or `yarn publish`, Yarn will remove the `condition:` protocol from `package.json` files, replacing it with the dependency version selected by the `<test>` env variable. This makes sure that packages published on the npm registry are compatible with the rest of the ecosystem.
+You can also add a `"conditions"` field to your `package.json` file to specify which fields to use when a specific condition is enabled:
+```jsonc
+{
+  // ...
+  "conditions": {
+    "<test>": [{ /* <if-true> */ }, { /* <if-false> */ }]
+  }
+}
+```
+
+When running `yarn pack` or `yarn publish`, Yarn will remove the `condition:` protocol and the `"conditions"` field from `package.json` files, replacing it with the dependency version selected by the `<test>` env variable. This makes sure that packages published on the npm registry are compatible with the rest of the ecosystem.
 
 If you want to remove the conditions from your `package.json` files, you can run the `yarn condition materialize <test> [--true|--false]` command.
 
+> 💡 Since the `"conditions"` field is only resolved when packing/publishing, its contents won't affect the Node.js behavior during development. If necessary, you can specify the conditional fields outside of the `"conditions"` field, with a value that works for the different conditions test values.
+
 ## Example
+
+### `condition:` protocol
 
 You could set your dependencies like this:
 
@@ -120,6 +134,46 @@ The `package.json` file will be automatically updated to
   "dependencies": {
     "chokidar": "condition: node10 ? ^3.5.1 : ^2.1.8",
     "parcel": "next"
+  }
+}
+```
+
+### `"conditions"` field
+
+You might want to rename an entry-point of your package, from `./old-name` to `./new-name`, but only do it when a given condition is enabled:
+```jsonc
+{
+  "conditions": {
+    "experimental": [ /* if-true */{
+      "exports": {
+        "./new-name": "./lib/new-name.js"
+      }
+    }, /* if-false */ {
+      "exports": {
+        "./old-name": "./lib/old-name.js"
+      }
+    }]
+  },
+  "exports": {
+    "./old-name": "./lib/old-name.js",
+    "./new-name": "./lib/new-name.js"
+  }
+}
+```
+
+With this `package.json` both `./old-name` and `./new-name` will work during development, but the published `package.json` will be either
+```json
+{
+  "exports": {
+    "./old-name": "./lib/old-name.js"
+  }
+}
+```
+or
+```json
+{
+  "exports": {
+    "./new-name": "./lib/new-name.js"
   }
 }
 ```

@@ -11,6 +11,10 @@ import { parse } from "./conditionParser";
 
 import { CACHE_VERSION } from "./constants";
 
+export type PkgConditions = {
+  [test: string]: [object | null, object | null];
+}
+
 export function hasConditionProtocol(range: string) {
   return range.startsWith("condition:");
 }

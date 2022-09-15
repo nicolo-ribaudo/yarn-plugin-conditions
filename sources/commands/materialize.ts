@@ -8,7 +8,7 @@ import {
 } from "@yarnpkg/core";
 import { BaseCommand } from "@yarnpkg/cli";
 import { Command, Option, Usage } from "clipanion";
-import * as t from "typanion";
+import * as t from "typanion-custom";
 
 import { assertKnownCondition, evaluateCondition } from "../configuration";
 import { DEPENDENCY_TYPES } from "../constants";

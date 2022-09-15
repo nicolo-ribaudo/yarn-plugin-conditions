@@ -16,12 +16,11 @@ import * as conditionUtils from "../conditionUtils";
 
 const has = Function.call.bind(Object.prototype.hasOwnProperty);
 const hasDeep = (obj: object, prop: string, ...next: string[]) =>
-  has(obj, prop) && (next.length === 0 || hasDeep(obj[prop], ...next as [string, ...string[]]));
+  has(obj, prop) &&
+  (next.length === 0 || hasDeep(obj[prop], ...(next as [string, ...string[]])));
 
 export class MaterlializeCommand extends BaseCommand {
-  static paths = [
-    ["condition", "materialize"]
-  ];
+  static paths = [["condition", "materialize"]];
 
   static usage: Usage = Command.Usage({
     description: "Evaluate and replace a condition in package.json files",
@@ -43,8 +42,8 @@ export class MaterlializeCommand extends BaseCommand {
 
   false: boolean = Option.Boolean("--false", false);
 
-	static schema = [
-		t.hasMutuallyExclusiveKeys(["true", "false"]),
+  static schema = [
+    t.hasMutuallyExclusiveKeys(["true", "false"], { missingIf: "falsy" }),
   ];
 
   async execute() {
@@ -95,9 +94,8 @@ export class MaterlializeCommand extends BaseCommand {
           continue;
         }
 
-        const { test, consequent, alternate } = conditionUtils.parseDescriptor(
-          descriptor
-        );
+        const { test, consequent, alternate } =
+          conditionUtils.parseDescriptor(descriptor);
 
         if (test !== this.condition) continue;
 

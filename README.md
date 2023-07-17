@@ -43,6 +43,11 @@ condition: <test> ? <if-true> : <if-false>
 
 When running `yarn install`, Yarn will install both the `<if-true>` and `<if-false>` dependencies. At _runtime_, it will decide which dependency to load based on the `<test>` condition.
 
+For ESM dependencies, you have to explicitly specify the list of exports you want to be re-exported:
+```
+condition: <test> ? <if-true> : <if-false> (esm:var1,default,anotherExport)
+```
+
 You can also add a `"conditions"` field to your `package.json` file to specify which fields to use when a specific condition is enabled:
 ```jsonc
 {

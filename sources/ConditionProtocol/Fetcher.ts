@@ -51,6 +51,7 @@ export class ConditionFetcher implements Fetcher {
       test,
       consequent: consequentOpt,
       alternate: alternateOpt,
+      esmExports: esmExportsOpt,
     } = conditionUtils.parseLocator(locator);
     const defaultValue = getDefaultTestValue(opts.project, test);
 
@@ -58,6 +59,7 @@ export class ConditionFetcher implements Fetcher {
       test,
       consequentOpt,
       alternateOpt,
+      esmExportsOpt,
       defaultValue
     );
 
@@ -66,6 +68,8 @@ export class ConditionFetcher implements Fetcher {
         return {
           dependency: null,
           require: `null`,
+          esmHeader: ``,
+          imported: `{ __proto__: null }`,
         };
       }
 
@@ -78,36 +82,76 @@ export class ConditionFetcher implements Fetcher {
       );
 
       const name = structUtils.stringifyIdent(desc);
+      const varId = `if_${result}`;
 
       return {
         dependency: { [name]: desc.range },
         require: `require(${JSON.stringify(name)})`,
+        esmHeader: `import * as ${varId} from ${JSON.stringify(name)};`,
+        imported: varId,
       };
     };
 
     const consequent = prepare(consequentOpt, true);
     const alternate = prepare(alternateOpt, false);
 
-    return createSimplePackage(
-      locator,
-      opts.project,
-      {
-        version: `0.0.0-condition-${hash}`,
-        dependencies: {
-          ...consequent.dependency,
-          ...alternate.dependency,
-        },
+    const packageJson = {
+      version: `0.0.0-condition-${hash}`,
+      dependencies: {
+        ...consequent.dependency,
+        ...alternate.dependency,
       },
-      `\
+      ...esmExportsOpt && {
+        exports: {
+          module: "./index.mjs",
+          default: "./index.cjs"
+        }
+      }
+    }
+
+    const boolFn = `\
 // env vars from the cli are always strings, so !!ENV_VAR returns true for "false"
 function bool(value) {
   if (value == null) return ${defaultValue};
   return value && value !== "false" && value !== "0";
 }
+`;
+
+    const indexJS = `\
+${boolFn}
 module.exports = bool(process.env[${JSON.stringify(test)}])
   ? ${consequent.require}
   : ${alternate.require};
-`
+`;
+
+    let indexMJS = null;
+    if (esmExportsOpt) {
+      let hasDefault = false;
+      const nonDefaultExports = [];
+      for (const name of esmExportsOpt) {
+        if (name === "default") {
+          hasDefault = true;
+        } else {
+          nonDefaultExports.push(name);
+        }
+      }
+
+      indexMJS = `\
+${boolFn}
+${consequent.esmHeader}
+${alternate.esmHeader}
+
+export const { ${ nonDefaultExports.join(", ")} } = bool(process.env[${JSON.stringify(test)}]) ? ${consequent.imported} : ${alternate.imported};
+${hasDefault && `export default (bool(process.env[${JSON.stringify(test)}]) ? ${consequent.imported} : ${alternate.imported}).default;`}
+`;
+    }
+
+    return createSimplePackage(
+      locator,
+      opts.project,
+      packageJson,
+      indexJS,
+      indexMJS,
     );
   }
 }

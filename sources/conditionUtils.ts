@@ -21,18 +21,19 @@ export function hasConditionProtocol(range: string) {
 
 export function parseSpec(
   spec: string
-): { test: string; consequent: string | null; alternate: string | null } {
+): { test: string; consequent: string | null; alternate: string | null; esmExports: string[] | null } {
   try {
     return parse(spec);
   } catch (e) {
     try {
-      const { test, consequent, alternate } = structUtils.parseRange(
+      const { test, consequent, alternate, esmExports } = structUtils.parseRange(
         spec
       ).params;
       return {
         test,
         consequent: consequent || null,
         alternate: alternate || null,
+        esmExports: esmExports || null,
       };
     } catch {
       throw e;
@@ -52,25 +53,31 @@ function makeSpec({
   test,
   consequent,
   alternate,
+  esmExports,
   hash,
 }: {
   test: string;
   consequent: string | null;
   alternate: string | null;
+  esmExports: string[] | null;
   hash: string | null;
 }) {
-  return `condition:${test}?${consequent || ""}:${alternate || ""}#${
-    hash || ""
-  }`;
+  let spec = `condition:${test}?`;
+  if (consequent) spec += consequent;
+  spec += ":";
+  if (alternate) spec += alternate;
+  if (esmExports) spec += `(esm:${esmExports.join(",")})`;
+  if (hash) spec += `#${hash}`;
+  return spec;
 }
 
 export function makeDescriptor(
   ident: Ident,
-  { test, consequent, alternate }: ReturnType<typeof parseDescriptor>
+  { test, consequent, alternate, esmExports }: ReturnType<typeof parseDescriptor>
 ) {
   return structUtils.makeDescriptor(
     ident,
-    makeSpec({ test, consequent, alternate, hash: null })
+    makeSpec({ test, consequent, alternate, esmExports, hash: null })
   );
 }
 
@@ -80,12 +87,13 @@ export function makeLocator(
     test,
     consequent,
     alternate,
+    esmExports,
     hash,
   }: ReturnType<typeof parseLocator> & { hash: string }
 ) {
   return structUtils.makeLocator(
     ident,
-    makeSpec({ test, consequent, alternate, hash })
+    makeSpec({ test, consequent, alternate, esmExports, hash })
   );
 }
 
@@ -111,6 +119,7 @@ export function makeHash(
   test: string,
   consequent: string | null,
   alternate: string | null,
+  esmExports: string[] | null,
   defaultValue: boolean
 ) {
   return hashUtils
@@ -119,6 +128,7 @@ export function makeHash(
       test,
       consequent || "-",
       alternate || "-",
+      esmExports?.join(",") || "-",
       defaultValue ? "1" : "0"
     )
     .slice(0, 6);

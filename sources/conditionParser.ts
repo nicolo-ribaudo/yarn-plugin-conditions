@@ -4,6 +4,7 @@ export function parse(
   test: string;
   consequent: string | null;
   alternate: string | null;
+  esmExports: string[] | null;
   hash: string | null;
 } {
   const PROTOCOL = "condition:";
@@ -28,9 +29,8 @@ export function parse(
   let consequent = null;
   if (source[pos] === "(") {
     consequent = eatParenthesized().trim() || null;
-    skipWs();
   } else if (source[pos] !== ":") {
-    consequent = eatUntil(":").trimRight() || null;
+    consequent = eatRegExp(/[^(:]+/y)?.trimRight() || null;
   }
 
   expect(":");
@@ -38,13 +38,14 @@ export function parse(
 
   let alternate = null;
   if (pos < source.length) {
-    if (source[pos] === "(") {
+    if (source[pos] === "(" && !source.startsWith("esm:", pos + 1)) {
       alternate = eatParenthesized().trim() || null;
-      skipWs();
     } else if (source[pos] !== ":") {
-      alternate = eatUntil("#").trimRight() || null;
+      alternate = eatRegExp(/[^(#]+/y)?.trimRight() || null;
     }
   }
+
+  let esmExports = parseESMList();
 
   let hash = null;
   if (pos < source.length && source[pos] === "#") {
@@ -57,7 +58,7 @@ export function parse(
     throw new Error(`Unexpected '${source[pos]}' at index ${pos} (${source})`);
   }
 
-  return { test, consequent, alternate, hash };
+  return { test, consequent, alternate, esmExports, hash };
 
   function expect(ch) {
     if (source[pos] !== ch) {
@@ -77,13 +78,6 @@ export function parse(
 
     pos += match[0].length;
     return match[0];
-  }
-
-  function eatUntil(end) {
-    const start = pos;
-    pos = source.indexOf(end, start);
-    if (pos === -1) pos = source.length;
-    return source.slice(start, pos);
   }
 
   function eatParenthesized() {
@@ -109,6 +103,16 @@ export function parse(
       pos++;
     }
 
+    skipWs();
+
     return contents;
+  }
+
+  function parseESMList() {
+    if (pos < source.length && source.startsWith("(esm:", pos)) {
+      const rawExports = eatParenthesized().slice("esm:".length).trim();
+      if (rawExports) return rawExports.split(",").map(s => s.trim())
+    }
+    return null;
   }
 }

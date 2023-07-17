@@ -9,7 +9,8 @@ export async function createSimplePackage(
   locator: Locator,
   project: Project,
   packageJson: object,
-  indexJS: string
+  indexJS: string,
+  indexMJS?: string,
 ) {
   const [tmpDir, libzip] = await Promise.all([
     xfs.mktempPromise(),
@@ -35,6 +36,10 @@ export async function createSimplePackage(
     conditionPackage.writeFilePromise(
       ppath.join(prefixPath, "index.js" as Filename),
       indexJS
+    ),
+    indexMJS && conditionPackage.writeFilePromise(
+      ppath.join(prefixPath, "index.mjs" as Filename),
+      indexMJS
     ),
   ]);
 

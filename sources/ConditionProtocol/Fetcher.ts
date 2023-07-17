@@ -117,7 +117,7 @@ function bool(value) {
 }
 `;
 
-    const indexJS = `\
+    let indexJS = `\
 ${boolFn}
 module.exports = bool(process.env[${JSON.stringify(test)}])
   ? ${consequent.require}
@@ -126,6 +126,8 @@ module.exports = bool(process.env[${JSON.stringify(test)}])
 
     let indexMJS = null;
     if (esmExportsOpt) {
+      indexJS += `0 && (${esmExportsOpt.map(n => `exports.${n} = `).join("")} 0);`
+
       let hasDefault = false;
       const nonDefaultExports = [];
       for (const name of esmExportsOpt) {

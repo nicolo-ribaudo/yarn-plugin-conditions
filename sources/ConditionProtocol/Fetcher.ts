@@ -103,8 +103,8 @@ export class ConditionFetcher implements Fetcher {
       },
       ...esmExportsOpt && {
         exports: {
-          module: "./index.mjs",
-          default: "./index.js"
+          require: "./index.js",
+          default: "./index.mjs"
         }
       }
     }

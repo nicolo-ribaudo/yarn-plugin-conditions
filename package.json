@@ -17,5 +17,6 @@
   "scripts": {
     "build": "builder build plugin"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "packageManager": "yarn@3.6.1"
 }

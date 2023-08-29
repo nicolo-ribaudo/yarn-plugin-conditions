@@ -60,7 +60,7 @@ export class ConditionResolver implements Resolver {
     dependencies: unknown,
     opts: ResolveOptions
   ): Promise<Locator[]> {
-    const { test, consequent, alternate, esmExports } = conditionUtils.parseDescriptor(
+    const { test, consequent, alternate, esmExports, peers } = conditionUtils.parseDescriptor(
       descriptor
     );
     const hash = conditionUtils.makeHash(
@@ -68,6 +68,7 @@ export class ConditionResolver implements Resolver {
       consequent,
       alternate,
       esmExports,
+      peers,
       getDefaultTestValue(opts.project, test)
     );
 
@@ -77,6 +78,7 @@ export class ConditionResolver implements Resolver {
         consequent,
         alternate,
         esmExports,
+        peers,
         hash,
       }),
     ];
@@ -87,7 +89,7 @@ export class ConditionResolver implements Resolver {
   }
 
   async resolve(locator: Locator, opts: ResolveOptions): Promise<Package> {
-    const { test, consequent, alternate, esmExports } = conditionUtils.parseLocator(
+    const { test, consequent, alternate, esmExports, peers } = conditionUtils.parseLocator(
       locator
     );
 
@@ -96,6 +98,7 @@ export class ConditionResolver implements Resolver {
       consequent,
       alternate,
       esmExports,
+      peers,
       getDefaultTestValue(opts.project, test)
     );
 

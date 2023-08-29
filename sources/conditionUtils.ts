@@ -21,12 +21,12 @@ export function hasConditionProtocol(range: string) {
 
 export function parseSpec(
   spec: string
-): { test: string; consequent: string | null; alternate: string | null; esmExports: string[] | null } {
+): { test: string; consequent: string | null; alternate: string | null; esmExports: string[] | null; peers: string[] | null } {
   try {
     return parse(spec);
   } catch (e) {
     try {
-      const { test, consequent, alternate, esmExports } = structUtils.parseRange(
+      const { test, consequent, alternate, esmExports, peers } = structUtils.parseRange(
         spec
       ).params;
       return {
@@ -34,6 +34,7 @@ export function parseSpec(
         consequent: consequent || null,
         alternate: alternate || null,
         esmExports: esmExports || null,
+        peers: peers || null,
       };
     } catch {
       throw e;
@@ -54,12 +55,14 @@ function makeSpec({
   consequent,
   alternate,
   esmExports,
+  peers,
   hash,
 }: {
   test: string;
   consequent: string | null;
   alternate: string | null;
   esmExports: string[] | null;
+  peers: string[] | null;
   hash: string | null;
 }) {
   let spec = `condition:${test}?`;
@@ -67,17 +70,18 @@ function makeSpec({
   spec += ":";
   if (alternate) spec += alternate;
   if (esmExports) spec += `(esm:${esmExports.join(",")})`;
+  if (peers) spec += `(peer:${peers.join(",")})`;
   if (hash) spec += `#${hash}`;
   return spec;
 }
 
 export function makeDescriptor(
   ident: Ident,
-  { test, consequent, alternate, esmExports }: ReturnType<typeof parseDescriptor>
+  { test, consequent, alternate, esmExports, peers }: ReturnType<typeof parseDescriptor>
 ) {
   return structUtils.makeDescriptor(
     ident,
-    makeSpec({ test, consequent, alternate, esmExports, hash: null })
+    makeSpec({ test, consequent, alternate, esmExports, peers, hash: null })
   );
 }
 
@@ -88,12 +92,13 @@ export function makeLocator(
     consequent,
     alternate,
     esmExports,
+    peers,
     hash,
   }: ReturnType<typeof parseLocator> & { hash: string }
 ) {
   return structUtils.makeLocator(
     ident,
-    makeSpec({ test, consequent, alternate, esmExports, hash })
+    makeSpec({ test, consequent, alternate, esmExports, peers, hash })
   );
 }
 
@@ -120,6 +125,7 @@ export function makeHash(
   consequent: string | null,
   alternate: string | null,
   esmExports: string[] | null,
+  peers: string[] | null,
   defaultValue: boolean
 ) {
   return hashUtils
@@ -129,6 +135,7 @@ export function makeHash(
       consequent || "-",
       alternate || "-",
       esmExports?.join(",") || "-",
+      peers?.join(",") || "-",
       defaultValue ? "1" : "0"
     )
     .slice(0, 6);

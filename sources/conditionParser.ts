@@ -5,6 +5,7 @@ export function parse(
   consequent: string | null;
   alternate: string | null;
   esmExports: string[] | null;
+  peers: string[] | null;
   hash: string | null;
 } {
   const PROTOCOL = "condition:";
@@ -45,7 +46,9 @@ export function parse(
     }
   }
 
-  let esmExports = parseESMList();
+  let esmExports = parseList("esm");
+  let peers = parseList("peer");
+  if (!esmExports && peers) esmExports = parseList("esm");
 
   let hash = null;
   if (pos < source.length && source[pos] === "#") {
@@ -58,7 +61,7 @@ export function parse(
     throw new Error(`Unexpected '${source[pos]}' at index ${pos} (${source})`);
   }
 
-  return { test, consequent, alternate, esmExports, hash };
+  return { test, consequent, alternate, esmExports, peers, hash };
 
   function expect(ch) {
     if (source[pos] !== ch) {
@@ -108,10 +111,10 @@ export function parse(
     return contents;
   }
 
-  function parseESMList() {
-    if (pos < source.length && source.startsWith("(esm:", pos)) {
-      const rawExports = eatParenthesized().slice("esm:".length).trim();
-      if (rawExports) return rawExports.split(",").map(s => s.trim())
+  function parseList(prefix: string) {
+    if (pos < source.length && source.startsWith(`(${prefix}:`, pos)) {
+      const items = eatParenthesized().slice(prefix.length + 1).trim();
+      if (items) return items.split(",").map(s => s.trim())
     }
     return null;
   }

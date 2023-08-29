@@ -52,6 +52,7 @@ export class ConditionFetcher implements Fetcher {
       consequent: consequentOpt,
       alternate: alternateOpt,
       esmExports: esmExportsOpt,
+      peers: peersOpt,
     } = conditionUtils.parseLocator(locator);
     const defaultValue = getDefaultTestValue(opts.project, test);
 
@@ -60,6 +61,7 @@ export class ConditionFetcher implements Fetcher {
       consequentOpt,
       alternateOpt,
       esmExportsOpt,
+      peersOpt,
       defaultValue
     );
 
@@ -106,6 +108,9 @@ export class ConditionFetcher implements Fetcher {
           require: "./index.js",
           default: "./index.mjs"
         }
+      },
+      ...peersOpt && {
+        peerDependencies: Object.fromEntries(peersOpt.map(name => [name, "*"]))
       }
     }
 

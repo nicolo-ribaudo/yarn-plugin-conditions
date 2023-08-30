@@ -4,6 +4,7 @@ import {
   LinkType,
   IdentHash,
   MinimalResolveOptions,
+  structUtils,
 } from "@yarnpkg/core";
 import { Descriptor, Locator, Package } from "@yarnpkg/core";
 
@@ -132,7 +133,12 @@ export class ConditionResolver implements Resolver {
           alternate && [alternateDesc.identHash, alternateDesc],
         ].filter(Boolean) as [IdentHash, Descriptor][]
       ),
-      peerDependencies: new Map(),
+      peerDependencies: new Map(
+        (peers || []).map(peer => {
+          const desc = structUtils.parseDescriptor(`${peer}@*`);
+          return [desc.identHash, desc];
+        })
+      ),
       dependenciesMeta: new Map(),
       peerDependenciesMeta: new Map(),
       bin: null,

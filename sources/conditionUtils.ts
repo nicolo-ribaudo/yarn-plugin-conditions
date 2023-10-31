@@ -69,8 +69,8 @@ function makeSpec({
   if (consequent) spec += consequent;
   spec += ":";
   if (alternate) spec += alternate;
-  if (esmExports) spec += `(esm:${esmExports.join(",")})`;
-  if (peers) spec += `(peer:${peers.join(",")})`;
+  if (esmExports) spec += `(esm:${esmExports.join("|")})`;
+  if (peers) spec += `(peer:${peers.join("|")})`;
   if (hash) spec += `#${hash}`;
   return spec;
 }
@@ -134,8 +134,8 @@ export function makeHash(
       test,
       consequent || "-",
       alternate || "-",
-      esmExports?.join(",") || "-",
-      peers?.join(",") || "-",
+      esmExports?.join("|") || "-",
+      peers?.join("|") || "-",
       defaultValue ? "1" : "0"
     )
     .slice(0, 6);

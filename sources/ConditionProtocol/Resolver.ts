@@ -32,10 +32,9 @@ export class ConditionResolver implements Resolver {
     descriptor: Descriptor,
     opts: MinimalResolveOptions
   ): Record<string, Descriptor> {
-    const { test, consequent, alternate } = conditionUtils.parseDescriptor(
-      descriptor
-    );
-    const result: Record<string, Descriptor> = {};
+    const { test, consequent, alternate } =
+      conditionUtils.parseDescriptor(descriptor);
+    const result: { consequent?: Descriptor, alternate?: Descriptor } = {};
     if (consequent) {
       result.consequent = conditionUtils.makeQualifiedDescriptor(
         opts.project,
@@ -52,7 +51,7 @@ export class ConditionResolver implements Resolver {
         test,
         alternate,
         false
-      )
+      );
     }
     return result;
   }
@@ -62,9 +61,8 @@ export class ConditionResolver implements Resolver {
     dependencies: unknown,
     opts: ResolveOptions
   ): Promise<Locator[]> {
-    const { test, consequent, alternate, esmExports, peers } = conditionUtils.parseDescriptor(
-      descriptor
-    );
+    const { test, consequent, alternate, esmExports, peers } =
+      conditionUtils.parseDescriptor(descriptor);
     const hash = conditionUtils.makeHash(
       test,
       consequent,
@@ -86,19 +84,25 @@ export class ConditionResolver implements Resolver {
     ];
   }
 
-  async getSatisfying(descriptor: Descriptor, dependencies: Record<string, Package>, locators: Array<Locator>, opts: ResolveOptions) {
+  async getSatisfying(
+    descriptor: Descriptor,
+    dependencies: Record<string, Package>,
+    locators: Array<Locator>,
+    opts: ResolveOptions
+  ): Promise<{ locators: Locator[]; sorted: boolean }> {
     const [locator] = await this.getCandidates(descriptor, dependencies, opts);
 
     return {
-      locators: locators.filter(candidate => candidate.locatorHash === locator.locatorHash),
+      locators: locators.filter(
+        (candidate) => candidate.locatorHash === locator.locatorHash
+      ),
       sorted: false,
     };
   }
 
   async resolve(locator: Locator, opts: ResolveOptions): Promise<Package> {
-    const { test, consequent, alternate, esmExports, peers } = conditionUtils.parseLocator(
-      locator
-    );
+    const { test, consequent, alternate, esmExports, peers } =
+      conditionUtils.parseLocator(locator);
 
     const hash = conditionUtils.makeHash(
       test,

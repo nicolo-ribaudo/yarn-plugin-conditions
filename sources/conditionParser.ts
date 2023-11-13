@@ -114,7 +114,7 @@ export function parse(
   function parseList(prefix: string) {
     if (pos < source.length && source.startsWith(`(${prefix}:`, pos)) {
       const items = eatParenthesized().slice(prefix.length + 1).trim();
-      if (items) return items.split(",").map(s => s.trim())
+      if (items) return items.split("|").map(s => s.trim())
     }
     return null;
   }

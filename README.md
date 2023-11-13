@@ -45,12 +45,12 @@ When running `yarn install`, Yarn will install both the `<if-true>` and `<if-fal
 
 For ESM dependencies, you have to explicitly specify the list of exports you want to be re-exported:
 ```
-condition: <test> ? <if-true> : <if-false> (esm:var1,default,anotherExport)
+condition: <test> ? <if-true> : <if-false> (esm:var1|default|anotherExport)
 ```
 
 If you need the intermediate package to have `peerDependency` so that they can be properly propagate to the `<if-true>` and `<if-false>` packages, you need to explicitly list them:
 ```
-condition: <test> ? <if-true> : <if-false> (peer:pkg-1,@another/package)
+condition: <test> ? <if-true> : <if-false> (peer:pkg-1|@another/package)
 ```
 
 You can also add a `"conditions"` field to your `package.json` file to specify which fields to use when a specific condition is enabled:

@@ -31,29 +31,29 @@ export class ConditionResolver implements Resolver {
   getResolutionDependencies(
     descriptor: Descriptor,
     opts: MinimalResolveOptions
-  ): Descriptor[] {
-    const { test, consequent, alternate, esmExports } = conditionUtils.parseDescriptor(
-      descriptor
-    );
-
-    return [
-      consequent &&
-        conditionUtils.makeQualifiedDescriptor(
-          opts.project,
-          descriptor,
-          test,
-          consequent,
-          true
-        ),
-      alternate &&
-        conditionUtils.makeQualifiedDescriptor(
-          opts.project,
-          descriptor,
-          test,
-          alternate,
-          false
-        ),
-    ].filter(Boolean);
+  ): Record<string, Descriptor> {
+    const { test, consequent, alternate } =
+      conditionUtils.parseDescriptor(descriptor);
+    const result: { consequent?: Descriptor, alternate?: Descriptor } = {};
+    if (consequent) {
+      result.consequent = conditionUtils.makeQualifiedDescriptor(
+        opts.project,
+        descriptor,
+        test,
+        consequent,
+        true
+      );
+    }
+    if (alternate) {
+      result.alternate = conditionUtils.makeQualifiedDescriptor(
+        opts.project,
+        descriptor,
+        test,
+        alternate,
+        false
+      );
+    }
+    return result;
   }
 
   async getCandidates(
@@ -61,9 +61,8 @@ export class ConditionResolver implements Resolver {
     dependencies: unknown,
     opts: ResolveOptions
   ): Promise<Locator[]> {
-    const { test, consequent, alternate, esmExports, peers } = conditionUtils.parseDescriptor(
-      descriptor
-    );
+    const { test, consequent, alternate, esmExports, peers } =
+      conditionUtils.parseDescriptor(descriptor);
     const hash = conditionUtils.makeHash(
       test,
       consequent,
@@ -85,14 +84,25 @@ export class ConditionResolver implements Resolver {
     ];
   }
 
-  async getSatisfying() {
-    return null;
+  async getSatisfying(
+    descriptor: Descriptor,
+    dependencies: Record<string, Package>,
+    locators: Array<Locator>,
+    opts: ResolveOptions
+  ): Promise<{ locators: Locator[]; sorted: boolean }> {
+    const [locator] = await this.getCandidates(descriptor, dependencies, opts);
+
+    return {
+      locators: locators.filter(
+        (candidate) => candidate.locatorHash === locator.locatorHash
+      ),
+      sorted: false,
+    };
   }
 
   async resolve(locator: Locator, opts: ResolveOptions): Promise<Package> {
-    const { test, consequent, alternate, esmExports, peers } = conditionUtils.parseLocator(
-      locator
-    );
+    const { test, consequent, alternate, esmExports, peers } =
+      conditionUtils.parseLocator(locator);
 
     const hash = conditionUtils.makeHash(
       test,

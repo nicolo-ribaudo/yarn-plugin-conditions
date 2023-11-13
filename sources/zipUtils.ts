@@ -1,6 +1,6 @@
 import { Locator, Project, structUtils } from "@yarnpkg/core";
-import { Filename, ppath, xfs, ZipFS } from "@yarnpkg/fslib";
-import { getLibzipPromise } from "@yarnpkg/libzip";
+import { Filename, ppath, xfs } from "@yarnpkg/fslib";
+import { getLibzipPromise, ZipFS } from "@yarnpkg/libzip";
 
 // We always set the same mtime in generated zip archives, to keep the checksum static.
 const mtime = 1580511600000;

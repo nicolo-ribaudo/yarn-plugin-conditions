@@ -43,14 +43,14 @@ export class MaterlializeCommand extends BaseCommand {
 
   false: boolean = Option.Boolean("--false", false);
 
-	static schema = [
-		t.hasMutuallyExclusiveKeys(["true", "false"]),
-  ];
-
   async execute() {
     const { project, workspace, cache, configuration } = await this.getRoot();
 
     assertKnownCondition(project, this.condition);
+
+    if (this.true && this.false) {
+      throw new Error("Cannot be both true and false");
+    }
 
     const value = this.false
       ? false

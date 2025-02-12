@@ -2095,10 +2095,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typanion@npm:^3.14.0, typanion@npm:^3.3.1, typanion@npm:^3.3.2, typanion@npm:^3.8.0":
+"typanion@npm:^3.14.0, typanion@npm:^3.8.0":
   version: 3.14.0
   resolution: "typanion@npm:3.14.0"
   checksum: 5e88d9e6121ff0ec543f572152fdd1b70e9cca35406d79013ec8e08defa8ef96de5fec9e98da3afbd1eb4426b9e8e8fe423163d0b482e34a40103cab1ef29abd
+  languageName: node
+  linkType: hard
+
+"typanion@npm:^3.3.1, typanion@npm:^3.3.2":
+  version: 3.3.2
+  resolution: "typanion@npm:3.3.2"
+  checksum: 2f01c79a747d876e58ae6962925f6d50f44ed94b104dd1b664ff24354308b9fa98ffab9277b6aa12f8b857e5722526f5a767a89d7a343f0899548a18b4b91401
   languageName: node
   linkType: hard
 

@@ -18,24 +18,21 @@ export class ConditionFetcher implements Fetcher {
   async fetch(locator: Locator, opts: FetchOptions) {
     const expectedChecksum = opts.checksums.get(locator.locatorHash) || null;
 
-    const [
-      packageFs,
-      releaseFs,
-      checksum,
-    ] = await opts.cache.fetchPackageFromCache(locator, expectedChecksum, {
-      onHit: () => opts.report.reportCacheHit(locator),
-      onMiss: () =>
-        opts.report.reportCacheMiss(
-          locator,
-          `${structUtils.prettyLocator(
-            opts.project.configuration,
-            locator
-          )} can't be found in the cache and will be fetched from the disk`
-        ),
-      loader: () => this.generateConditionPackage(locator, opts),
+    const [packageFs, releaseFs, checksum] =
+      await opts.cache.fetchPackageFromCache(locator, expectedChecksum, {
+        onHit: () => opts.report.reportCacheHit(locator),
+        onMiss: () =>
+          opts.report.reportCacheMiss(
+            locator,
+            `${structUtils.prettyLocator(
+              opts.project.configuration,
+              locator
+            )} can't be found in the cache and will be fetched from the disk`
+          ),
+        loader: () => this.generateConditionPackage(locator, opts),
 
-      skipIntegrityCheck: opts.skipIntegrityCheck,
-    });
+        skipIntegrityCheck: opts.cacheOptions.skipIntegrityCheck,
+      });
 
     return {
       packageFs,
@@ -72,6 +69,7 @@ export class ConditionFetcher implements Fetcher {
           require: `null`,
           esmHeader: ``,
           imported: `{ __proto__: null }`,
+          types: null,
         };
       }
 
@@ -91,6 +89,7 @@ export class ConditionFetcher implements Fetcher {
         require: `require(${JSON.stringify(name)})`,
         esmHeader: `import * as ${varId} from ${JSON.stringify(name)};`,
         imported: varId,
+        types: `import mod = require(${JSON.stringify(desc.name)});\nexport = mod;`,
       };
     };
 
@@ -103,16 +102,19 @@ export class ConditionFetcher implements Fetcher {
         ...consequent.dependency,
         ...alternate.dependency,
       },
-      ...esmExportsOpt && {
+      ...(esmExportsOpt && {
         exports: {
           require: "./index.js",
-          default: "./index.mjs"
-        }
-      },
-      ...peersOpt && {
-        peerDependencies: Object.fromEntries(peersOpt.map(name => [name, "*"]))
-      }
-    }
+          types: "./index.d.ts",
+          default: "./index.mjs",
+        },
+      }),
+      ...(peersOpt && {
+        peerDependencies: Object.fromEntries(
+          peersOpt.map((name) => [name, "*"])
+        ),
+      }),
+    };
 
     const boolFn = `\
 // env vars from the cli are always strings, so !!ENV_VAR returns true for "false"
@@ -131,7 +133,9 @@ module.exports = bool(process.env[${JSON.stringify(test)}])
 
     let indexMJS = null;
     if (esmExportsOpt) {
-      indexJS += `0 && (${esmExportsOpt.map(n => `exports.${n} = `).join("")} 0);`
+      indexJS += `0 && (${esmExportsOpt
+        .map((n) => `exports.${n} = `)
+        .join("")} 0);`;
 
       let hasDefault = false;
       const nonDefaultExports = [];
@@ -148,10 +152,23 @@ ${boolFn}
 ${consequent.esmHeader}
 ${alternate.esmHeader}
 
-export const { ${ nonDefaultExports.join(", ")} } = bool(process.env[${JSON.stringify(test)}]) ? ${consequent.imported} : ${alternate.imported};
-${hasDefault && `export default (bool(process.env[${JSON.stringify(test)}]) ? ${consequent.imported} : ${alternate.imported}).default;`}
+export const { ${nonDefaultExports.join(
+        ", "
+      )} } = bool(process.env[${JSON.stringify(test)}]) ? ${
+        consequent.imported
+      } : ${alternate.imported};
+${
+  hasDefault &&
+  `export default (bool(process.env[${JSON.stringify(test)}]) ? ${
+    consequent.imported
+  } : ${alternate.imported}).default;`
+}
 `;
     }
+
+    let indexDTS = locator.scope === "types"
+      ? consequent.types || alternate.types
+      : null;
 
     return createSimplePackage(
       locator,
@@ -159,6 +176,7 @@ ${hasDefault && `export default (bool(process.env[${JSON.stringify(test)}]) ? ${
       packageJson,
       indexJS,
       indexMJS,
+      indexDTS,
     );
   }
 }

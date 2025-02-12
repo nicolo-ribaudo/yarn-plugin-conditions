@@ -1,6 +1,6 @@
 import { Locator, Project, structUtils } from "@yarnpkg/core";
 import { Filename, ppath, xfs } from "@yarnpkg/fslib";
-import { getLibzipPromise, ZipFS } from "@yarnpkg/libzip";
+import { ZipFS } from "@yarnpkg/libzip";
 
 // We always set the same mtime in generated zip archives, to keep the checksum static.
 const mtime = 1580511600000;
@@ -11,17 +11,14 @@ export async function createSimplePackage(
   packageJson: object,
   indexJS: string,
   indexMJS?: string,
+  indexDTS?: string,
 ) {
-  const [tmpDir, libzip] = await Promise.all([
-    xfs.mktempPromise(),
-    getLibzipPromise(),
-  ]);
+  const tmpDir = await xfs.mktempPromise();
 
   const tmpFile = ppath.join(tmpDir, "condition.zip" as Filename);
   const prefixPath = structUtils.getIdentVendorPath(locator);
 
   const conditionPackage = new ZipFS(tmpFile, {
-    libzip,
     create: true,
     level: project.configuration.get(`compressionLevel`),
   });
@@ -40,6 +37,10 @@ export async function createSimplePackage(
     indexMJS && conditionPackage.writeFilePromise(
       ppath.join(prefixPath, "index.mjs" as Filename),
       indexMJS
+    ),
+    indexDTS && conditionPackage.writeFilePromise(
+      ppath.join(prefixPath, "index.d.ts" as Filename),
+      indexDTS
     ),
   ]);
 
